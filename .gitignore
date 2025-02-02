@@ -27,3 +27,6 @@ models/
 
 # Ignore VS Code settings
 .vscode/
+
+# Ignore hydra output files
+outputs/
