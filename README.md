@@ -10,14 +10,19 @@
 **Audio Processing:**
 
 - calculate sample rate automatically
-- change the logic of # Trim to shortest dimension
+- Analyse and update the logic for cqt calculation
 
 **MIDI Processing:**
 
 - save only 88 keys
 - and that too as 0 or 1 for each key
+- Analyze and update the logic for pianoroll calculation
 
 **Configs:**
 
 - put configs into single folder
 - make a single logger
+
+**Pipeline:**
+
+- change the logic of "# Trim to shortest dimension"
