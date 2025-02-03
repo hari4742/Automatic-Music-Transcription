@@ -31,8 +31,3 @@ Edit `src/maestro_downloader/config/config.yaml` to customize download settings.
 ## Logs
 
 Logs are saved to `src/logs/maestro_downloader.log`.
-
-## TODO:
-
-- save the metadata file to `data/metadata` both when downloaded from google and hugging face
-- when downloading from hugging face, keep trace of downloaded file information save to `data/metadata` folder

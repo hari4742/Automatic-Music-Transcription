@@ -7,11 +7,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Ignore dataset files
-data/raw/
-data/processed/
-data/splits/
-data/augmentation/
-data/HDF5/
+data/
 
 # Ignore logs and experiments
 logs/
