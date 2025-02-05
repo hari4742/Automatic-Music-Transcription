@@ -17,7 +17,7 @@ python src/processing/main.py
 
 ## Configuration
 
-Edit `src/processing/config/config.yaml` to customize processing parameters.
+Edit [`src/configs/data_processing_config.yaml`](../src/configs/data_processing_config.yaml) to customize processing parameters.
 
 ## Output
 

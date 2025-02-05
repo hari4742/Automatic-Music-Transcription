@@ -6,7 +6,7 @@ from src.processing.pipelines.maestro_pipeline import run_pipeline
 from src.utils.logger import setup_logging
 
 
-@hydra.main(config_path="./config", config_name="config", version_base=None)
+@hydra.main(config_path="../configs", config_name="data_processing_config", version_base=None)
 def main(cfg: DictConfig):
     """
     Main function to run the pipeline.

@@ -7,7 +7,7 @@ from src.maestro_downloader.core.hf_downloader import HuggingFaceDownloader
 from src.utils.logger import setup_logging
 
 
-@hydra.main(version_base=None, config_path="./config", config_name="config")
+@hydra.main(version_base=None, config_path="../configs", config_name="maestro_downloader_config")
 def main(cfg: DictConfig) -> None:
     """Main function to handle dataset downloads."""
     setup_logging(cfg.logs.output_dir, cfg.logs.output_filename)

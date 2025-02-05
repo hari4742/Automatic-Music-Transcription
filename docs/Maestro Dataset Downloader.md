@@ -26,7 +26,7 @@ python src/maestro_downloader/main.py
 
 ## Configuration
 
-Edit `src/maestro_downloader/config/config.yaml` to customize download settings.
+Edit [`src/configs/maestro_downloader_config.yaml`](../src/configs/maestro_downloader_config.yaml) to customize download settings.
 
 ## Logs
 
