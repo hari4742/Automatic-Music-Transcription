@@ -2,8 +2,12 @@ datasets:
   google:
     url: https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0.zip
     output_dir: data/raw
+    metadata_dir: data/metadata
+    metadata_filename: metadata.csv
   hf:
     repo_id: ddPn08/maestro-v3.0.0
     output_dir: data/raw
+    metadata_dir: data/metadata
+    metadata_filename: metadata.csv
 logs:
   output_dir: src/logs

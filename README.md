@@ -1,11 +1,14 @@
 # Automatic Music Transcription
 
+- To download dataset [check](./docs/Maestro%20Dataset%20Downloader.md)
+- To start data processing pipeline [check](./docs/Maestro%20Processing%20Pipeline.md)
+
 ## TODO:
 
-**Downloder:**
+~~**Downloder:**~~
 
-- save the metadata file to `data/metadata` both when downloaded from google and hugging face
-- when downloading from hugging face, keep trace of downloaded file information save to `data/metadata` folder
+- ~~save the metadata file to `data/metadata` both when downloaded from google and hugging face~~
+- ~~when downloading from hugging face, keep trace of downloaded file information save to `data/metadata` folder~~
 
 **Audio Processing:**
 

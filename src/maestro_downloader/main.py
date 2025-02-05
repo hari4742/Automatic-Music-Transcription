@@ -55,6 +55,8 @@ def main(cfg: DictConfig) -> None:
             google_downloader = GoogleStorageDownloader(
                 download_url=cfg.datasets.google.url,
                 output_dir=cfg.datasets.google.output_dir,
+                metadata_dir=cfg.datasets.google.metadata_dir,
+                metadata_filename=cfg.datasets.google.metadata_filename
             )
             google_downloader.run()
             logger.info(
@@ -76,10 +78,10 @@ def main(cfg: DictConfig) -> None:
                 f"Downloading subset (max {max_size} MB) from Hugging Face...")
             hf_downloader = HuggingFaceDownloader(
                 repo_id=cfg.datasets.hf.repo_id,
+                max_size=max_size * 1024 * 1024,  # Convert MB to bytes
                 output_dir=cfg.datasets.hf.output_dir,
             )
-            hf_downloader.download_subset(
-                max_size * 1024 * 1024)  # Convert MB to bytes
+            hf_downloader.run()
             logger.info("Subset download completed successfully.")
 
         else:

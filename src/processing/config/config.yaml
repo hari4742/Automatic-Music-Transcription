@@ -1,7 +1,7 @@
 data:
   raw_dir: data/raw
   processed_dir: data/processed
-  metadata_file: data/metadata/data.csv
+  metadata_file: data/metadata/metadata.csv
 
 processing:
   sample_rate: 22050

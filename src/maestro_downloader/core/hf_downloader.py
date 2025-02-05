@@ -10,10 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceDownloader:
-    def __init__(self, repo_id: str, output_dir: str = "data/raw"):
+    def __init__(self, repo_id: str, max_size: int, output_dir: str = "data/raw", metadata_dir: str = "data/metadata", metadata_filename: str = "metadata.csv"):
         self.repo_id = repo_id
         self.output_dir = ensure_directory_exists(output_dir)
         self.csv_path = Path(self.output_dir) / "maestro-v3.0.0.csv"
+        self.metadata_dir = ensure_directory_exists(metadata_dir)
+        self.metadata_file = self.metadata_dir / metadata_filename
+        self.downloaded_files = []
+        self.max_size: int = max_size
 
     def download_csv(self) -> None:
         """Download the CSV file from Hugging Face."""
@@ -26,30 +30,25 @@ class HuggingFaceDownloader:
                 local_dir_use_symlinks=False,
                 repo_type="dataset",
             )
-            logger.info(f"Metadata saved to {self.csv_path}")
+            logger.info(f"Metadata downloaded to {self.csv_path}")
 
-    def get_file_list(self) -> List[Tuple[str, str, float]]:
+    def get_file_list(self) -> pd.DataFrame:
         """Get a list of audio and MIDI files with their sizes."""
         self.download_csv()
         df = pd.read_csv(self.csv_path)
-        file_list = []
-        for _, row in df.iterrows():
-            audio_file = row["audio_filename"]
-            midi_file = row["midi_filename"]
-            duration = row["duration"]
-            file_list.append((audio_file, midi_file, duration))
-        return file_list
+        return df
 
-    def download_subset(self, max_size: int) -> None:
+    def download_subset(self) -> None:
         """Download files until the total size reaches the specified limit."""
         files = self.get_file_list()
         total_size = 0
-        downloaded_files = []  # TODO: save the files which we downloaded into metadata folder
+        selected_files = []
 
         # Sort files by duration (shortest first)
-        files.sort(key=lambda x: x[2])
+        files = files.sort_values(by="duration", ascending=True)
 
-        for audio_file, midi_file, duration in files:
+        for _, row in files.iterrows():
+            duration = row['duration']
             # Estimate file size based on duration (approximate)
             sample_rate = 48000
             bit_depth = 16
@@ -59,31 +58,58 @@ class HuggingFaceDownloader:
             midi_size = duration * 1000  # Approximate MIDI size
             total_file_size = audio_size + midi_size
 
-            if total_size + total_file_size > max_size:
+            if total_size + total_file_size > self.max_size:
                 break
-            downloaded_files.append((audio_file, midi_file))
+            selected_files.append(row)
             total_size += total_file_size
 
         logger.info(
-            f"Selected {len(downloaded_files)} pairs totaling {total_size / (1024 ** 2):.2f} MB")
+            f"Selected {len(selected_files)} pairs totaling {total_size / (1024 ** 2):.2f} MB")
+
+        selected_files = pd.DataFrame(selected_files)
 
         # Download the selected files
-        for audio_file, midi_file in tqdm(downloaded_files, desc="Downloading files"):
-            # Download audio file
-            hf_hub_download(
-                repo_id=self.repo_id,
-                filename=audio_file,
-                local_dir=self.output_dir,
-                local_dir_use_symlinks=False,
-                repo_type="dataset",
-            )
-            # Download MIDI file
-            hf_hub_download(
-                repo_id=self.repo_id,
-                filename=midi_file,
-                local_dir=self.output_dir,
-                local_dir_use_symlinks=False,
-                repo_type="dataset",  # Specify repo type as dataset
-            )
+        for _, row in tqdm(selected_files.iterrows(), desc="Downloading files"):
+            try:
+                audio_file, midi_file = row['audio_filename'], row['midi_filename']
+                # Download audio file
+                hf_hub_download(
+                    repo_id=self.repo_id,
+                    filename=audio_file,
+                    local_dir=self.output_dir,
+                    local_dir_use_symlinks=False,
+                    repo_type="dataset",
+                )
+                # Download MIDI file
+                hf_hub_download(
+                    repo_id=self.repo_id,
+                    filename=midi_file,
+                    local_dir=self.output_dir,
+                    local_dir_use_symlinks=False,
+                    repo_type="dataset",
+                )
 
-        logger.info(f"Download complete. Files saved to {self.output_dir}")
+                self.downloaded_files.append(row)
+
+                logger.info(
+                    f"Download complete. Files saved to {self.output_dir}")
+            except Exception as e:
+                logger.error(
+                    f"Error while downloading file from hugging face: {e}\nDownloaded only {len(self.downloaded_files)} to {self.output_dir}")
+
+    def move_metadata_file(self):
+
+        if len(self.downloaded_files) > 0:
+
+            df = pd.DataFrame(self.downloaded_files)
+            df.to_csv(self.metadata_file, index=False)
+
+            logger.info(
+                f"Successfully saved metadata file to {self.metadata_file}")
+        else:
+            logger.warning(
+                f"No files downloaded yet. Download the files to save the metadata.")
+
+    def run(self):
+        self.download_subset()
+        self.move_metadata_file()
