@@ -24,7 +24,7 @@
 **Configs:**
 
 - put configs into single folder
-- make a single logger
+- ~~make a single logger~~
 
 **Pipeline:**
 

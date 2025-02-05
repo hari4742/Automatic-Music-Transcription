@@ -14,7 +14,7 @@ def main(cfg: DictConfig):
     Args:
         cfg (DictConfig): Hydra configuration.
     """
-    setup_logging(cfg.logs.output_dir, "maestro_pipeline.log")
+    setup_logging(cfg.logs.output_dir, cfg.logs.output_filename)
     logger = logging.getLogger(__name__)
     logger.info("Starting Maestro Processing Pipeline...")
     run_pipeline(cfg)

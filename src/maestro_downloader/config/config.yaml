@@ -11,3 +11,4 @@ datasets:
     metadata_filename: metadata.csv
 logs:
   output_dir: src/logs
+  output_filename: maestro_downloader.log

@@ -12,3 +12,4 @@ processing:
 
 logs:
   output_dir: src/logs
+  output_filename: maestro_pipeline.log
