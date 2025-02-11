@@ -5,12 +5,12 @@ data:
 
 processing:
   audio:
-    sample_rate: 22050
+    sample_rate: null # keeping it null reads sr automatically from file metadata
     hop_length: 512
-    cqt_bins: 84
+    cqt_bins: 288 # 288 frequencies
+    bins_per_octave: 36 # 8 octaves and 36 frequencies in each octave
   midi:
-    resolution: 100
-    velocity_threshold: 20
+    velocity_threshold: 20 # intensity of pressing key  gt this threshold is considered on & lt is off, range: (0-127)
 
 logs:
   output_dir: src/logs

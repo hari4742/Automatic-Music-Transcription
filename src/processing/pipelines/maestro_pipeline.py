@@ -24,10 +24,10 @@ def process_task(task, config, queue):
         audio_processor = AudioProcessor(
             sample_rate=config.processing.audio.sample_rate,
             hop_length=config.processing.audio.hop_length,
-            cqt_bins=config.processing.audio.cqt_bins
+            cqt_bins=config.processing.audio.cqt_bins,
+            bins_per_octave=config.processing.audio.bins_per_octave
         )
         midi_processor = MIDIProcessor(
-            resolution=config.processing.midi.resolution,
             velocity_threshold=config.processing.midi.velocity_threshold
         )
 
@@ -35,17 +35,18 @@ def process_task(task, config, queue):
         audio_path = Path(config.data.raw_dir) / task["audio_filename"]
         midi_path = Path(config.data.raw_dir) / task["midi_filename"]
 
-        cqt = audio_processor.wav_to_cqt(str(audio_path))
-        pianoroll = midi_processor.midi_to_pianoroll(str(midi_path))
+        cqt, sample_rate = audio_processor.wav_to_cqt(str(audio_path))
+        pianoroll = midi_processor.midi_to_pianoroll(
+            str(midi_path), sample_rate, config.processing.audio.hop_length)
 
-        # Trim to shortest dimension
-        min_len = min(cqt.shape[0], pianoroll.shape[0])
+        # Trim to shortest dimension to pair the midi and wav
+        min_len = min(cqt.shape[1], pianoroll.shape[1])
         queue.put({
             "split": task["split"],
             "year": task["year"],
             "filename": audio_path.stem,
-            "cqt": cqt[:min_len],
-            "pianoroll": pianoroll[:min_len]
+            "cqt": cqt[:, :min_len],
+            "pianoroll": pianoroll[:, :min_len]
         })
     except Exception as e:
         logger.error(f"Error processing {task['audio_filename']}: {str(e)}")
@@ -101,7 +102,7 @@ def run_pipeline(config):
     # Process tasks
     logger.info(
         f"Processing {len(tasks)} files with {multiprocessing.cpu_count()} workers")
-    for task in tqdm(tasks, desc="Processing files", unit="file"):
+    for task in tqdm(tasks, desc="Processing files"):
         pool.apply_async(
             process_task,
             args=(task, config, queue)

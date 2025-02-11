@@ -10,23 +10,23 @@
 - ~~save the metadata file to `data/metadata` both when downloaded from google and hugging face~~
 - ~~when downloading from hugging face, keep trace of downloaded file information save to `data/metadata` folder~~
 
-**Audio Processing:**
+~~**Audio Processing:**~~
 
-- calculate sample rate automatically
-- Analyse and update the logic for cqt calculation
+- ~~calculate sample rate automatically~~
+- ~~Analyse and update the logic for cqt calculation~~
 
-**MIDI Processing:**
+~~**MIDI Processing:**~~
 
-- save only 88 keys
-- and that too as 0 or 1 for each key
-- Analyze and update the logic for pianoroll calculation
+- ~~save only 88 keys~~
+- ~~and that too as 0 or 1 for each key~~
+- ~~Analyze and update the logic for pianoroll calculation~~
 
-**Configs:**
+~~**Configs:**~~
 
 - ~~put configs into single folder~~
 - ~~make a single logger~~
 - ~~separate the audio and midi processing parameters in the config file~~
 
-**Pipeline:**
+~~**Pipeline:**~~
 
-- change the logic of "# Trim to shortest dimension"
+- ~~check the logic of "# Trim to shortest dimension"~~

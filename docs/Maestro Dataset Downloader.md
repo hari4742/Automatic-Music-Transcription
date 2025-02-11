@@ -31,3 +31,7 @@ Edit [`src/configs/maestro_downloader_config.yaml`](../src/configs/maestro_downl
 ## Logs
 
 Logs are saved to `src/logs/maestro_downloader.log`.
+
+## Dataset Details
+
+The dataset contains piano performances aligned within 3ms of the recorded audio. The audio is stored in 44.1-48 kHz 16-bit PCM stereo format.
