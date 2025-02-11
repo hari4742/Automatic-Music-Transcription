@@ -4,11 +4,13 @@ data:
   metadata_file: data/metadata/metadata.csv
 
 processing:
-  sample_rate: 22050
-  hop_length: 512
-  cqt_bins: 84
-  midi_resolution: 100
-  midi_velocity_threshold: 20
+  audio:
+    sample_rate: 22050
+    hop_length: 512
+    cqt_bins: 84
+  midi:
+    resolution: 100
+    velocity_threshold: 20
 
 logs:
   output_dir: src/logs

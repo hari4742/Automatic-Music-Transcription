@@ -25,7 +25,7 @@
 
 - ~~put configs into single folder~~
 - ~~make a single logger~~
-- separate the audio and midi processing parameters in the config file
+- ~~separate the audio and midi processing parameters in the config file~~
 
 **Pipeline:**
 

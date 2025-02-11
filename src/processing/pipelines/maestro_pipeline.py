@@ -22,13 +22,13 @@ def process_task(task, config, queue):
     try:
         # Initialize processors
         audio_processor = AudioProcessor(
-            sample_rate=config.processing.sample_rate,
-            hop_length=config.processing.hop_length,
-            cqt_bins=config.processing.cqt_bins
+            sample_rate=config.processing.audio.sample_rate,
+            hop_length=config.processing.audio.hop_length,
+            cqt_bins=config.processing.audio.cqt_bins
         )
         midi_processor = MIDIProcessor(
-            resolution=config.processing.midi_resolution,
-            velocity_threshold=config.processing.midi_velocity_threshold
+            resolution=config.processing.midi.resolution,
+            velocity_threshold=config.processing.midi.velocity_threshold
         )
 
         # Process files
