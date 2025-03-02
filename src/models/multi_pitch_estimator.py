@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class MultiPitchEstimator(nn.Module):
-    def __init__(self, input_bins: int):
+    def __init__(self):
         """
         Initialize the multi-pitch estimation model.
 
@@ -12,62 +12,62 @@ class MultiPitchEstimator(nn.Module):
         """
         super().__init__()
 
-        # CNN Block
-        self.conv = nn.Conv2d(
-            in_channels=1,  # Single channel (mono audio)
-            out_channels=64,
-            kernel_size=(20, 2),  # Time x Frequency
-            stride=(1, 1))
-        self.pool = nn.MaxPool2d(kernel_size=(4, 2), stride=(4, 2))
-        self.dropout = nn.Dropout(0.3)
+        input_shape = (288, 5)
+        kernel_size = (20, 2)
+        out_channels = 32
+        max_pool_kernel_shape = (4, 2)
 
-        # Calculate CNN output dimensions
-        cnn_time_dim = (360 - 20) // 4 + 1  # Adjusted for pooling
-        cnn_freq_dim = (input_bins - 2) // 2 + 1
-        lstm_input_size = cnn_freq_dim * 64  # Flattened CNN output
-
-        # RNN Block
-        self.lstm1 = nn.LSTM(
-            input_size=lstm_input_size,
-            hidden_size=500,
-            bidirectional=True,
-            # dropout=0.75  # Applied only to first LSTM
-        )
-        self.lstm2 = nn.LSTM(
-            input_size=1000,  # Bidirectional output
-            hidden_size=200,
-            bidirectional=True
+        # CNN for spectrogram feature extraction
+        self.cnn = nn.Sequential(
+            # Input: (1, 288, 5) Output: (32, 269, 4)
+            nn.Conv2d(1, out_channels=out_channels, kernel_size=kernel_size),
+            nn.ReLU(),
+            # Output: (32, 67, 2)
+            nn.MaxPool2d(max_pool_kernel_shape),
+            nn.Flatten(),                           # Output: 32*67*2 = 4288
         )
 
-        # Output Layer
-        self.fc = nn.Linear(400, 88)  # 200 * 2 (bidirectional)
+        x = ((input_shape[0]-kernel_size[0])+1)//max_pool_kernel_shape[0]
+        y = ((input_shape[1]-kernel_size[1])+1)//max_pool_kernel_shape[1]
+        lstm_input_size = out_channels * x * y
+
+        # Bidirectional LSTMs
+        self.lstm1 = nn.LSTM(input_size=lstm_input_size, hidden_size=500,
+                             bidirectional=True, batch_first=True)
+
+        self.dropout = nn.Dropout(0.75)
+
+        self.lstm2 = nn.LSTM(input_size=1000, hidden_size=200,  # 500*2 bidirectional
+                             bidirectional=True, batch_first=True)
+
+        # self.lstm = nn.Sequential(
+        #     nn.LSTM(input_size=lstm_input_size, hidden_size=500,
+        #             bidirectional=True, batch_first=True),
+        #     nn.Dropout(0.75),  # Recurrent dropout between LSTM layers
+        #     nn.LSTM(input_size=1000, hidden_size=200,  # 500*2 bidirectional
+        #             bidirectional=True, batch_first=True)
+        # )
+
+        # Final output layer
+        self.fc = nn.Sequential(
+            nn.Linear(400, 88),  # 200*2 bidirectional
+            nn.Sigmoid()
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the model.
 
-        Args:
-            x (torch.Tensor): Input CQT spectrogram of shape (batch, sequence, freq).
+        # Input shape: (batch_size, seq_len, 1, freq_bins, time_steps)
+        batch_size, seq_len = x.size(0), x.size(1)
 
-        Returns:
-            torch.Tensor: Predicted piano roll of shape (batch, sequence, 88).
-        """
+        # Process each timestep through CNN
+        x = x.view(batch_size * seq_len, 1, 288, 5)
+        x = self.cnn(x)  # (batch_size*seq_len, 4288)
+        x = x.view(batch_size, seq_len, -1)  # (batch_size, seq_len, 4288)
 
-        print(f"Input Shape: {x.shape}")
-        # Input shape: (batch, sequence, freq) → (batch, 1, sequence, freq)
-        x = x.unsqueeze(1)
+        # Process through bidirectional LSTMs
+        x, _ = self.lstm1(x)  # LSTM returns (output, (h_n, c_n))
+        x = self.dropout(x)   # Apply dropout to LSTM output
+        x, _ = self.lstm2(x)  # Pass through second LSTM
 
-        # CNN Block
-        x = self.pool(torch.relu(self.conv(x)))
-        x = self.dropout(x)
-
-        # Flatten frequency and channels
-        batch, channels, time, freq = x.shape
-        x = x.permute(0, 2, 1, 3).reshape(batch, time, -1)
-
-        # RNN Block
-        x, _ = self.lstm1(x)
-        x, _ = self.lstm2(x)
-
-        # Output Layer
-        return torch.sigmoid(self.fc(x))
+        # Final output layer
+        return self.fc(x)  # (batch_size, seq_len, 88)

@@ -2,81 +2,91 @@ import h5py
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from pathlib import Path
+from typing import Optional
 
 
 class MaestroDataset(Dataset):
-    def __init__(self, hdf5_path: str, split: str, sequence_length: int = 360, stride: int = 720, freq_bins: int = 288):
-        """
-        Initialize the dataset.
-
-        Args:
-            hdf5_path (str): Path to the HDF5 file.
-            split (str): Dataset split ("train", "validation", or "test").
-            sequence_length (int): Length of each sequence (default: 360).
-            stride (int): Stride for sequence sampling (default: 720).
-        """
-        self.hdf5_path = Path(hdf5_path)
+    def __init__(
+        self,
+        hdf5_path: str,
+        split: str,
+        sequence_length: int = 360,
+        step_size: int = 720,
+        context_frames: int = 2,
+        max_length: Optional[int] = None
+    ):
+        super().__init__()
+        self.hdf5_path = hdf5_path
         self.split = split
         self.sequence_length = sequence_length
-        self.stride = stride
-        self.freq_bins = freq_bins
+        self.step_size = step_size
+        self.context_frames = context_frames
+        self.max_length = max_length
 
-        # Load metadata and precompute sequence indices
-        self.hdf5_file = h5py.File(self.hdf5_path, "r")
-        self.split_group = self.hdf5_file[split]
-        self.sequence_indices = self._precompute_sequence_indices()
+        # Collect all valid sequences
+        self.sequences = []
+        with h5py.File(hdf5_path, 'r') as hdf:
+            if split not in hdf:
+                raise ValueError(f"Split {split} not found in HDF5 file")
 
-    def _precompute_sequence_indices(self):
-        """
-        Precompute indices for all sequences in the dataset.
+            for year in hdf[split]:
+                for piece in hdf[f"{split}/{year}"]:
+                    group = hdf[f"{split}/{year}/{piece}"]
+                    cqt = group['cqt']
+                    total_frames = cqt.shape[0]
 
-        Returns:
-            list: List of tuples (group_name, start_idx).
-        """
-        sequence_indices = []
-        for year in self.split_group:
-            year_group = self.split_group[year]
-            for filename in year_group:
-                file_group = year_group[filename]
-                cqt = file_group["cqt"][:]
-                num_sequences = (
-                    cqt.shape[0] - self.sequence_length) // self.stride + 1
-                print(
-                    f"File: {filename}, CQT shape: {cqt.shape}, Num sequences: {num_sequences}")
-                for i in range(num_sequences):
-                    start_idx = i * self.stride
-                    sequence_indices.append((f"{year}/{filename}", start_idx))
-        return sequence_indices
+                    # Calculate valid sequence start indices
+                    starts = range(
+                        0,
+                        total_frames - sequence_length + 1,
+                        step_size
+                    )
+
+                    if self.max_length:
+                        starts = starts[:self.max_length]
+
+                    for start in starts:
+                        self.sequences.append((
+                            f"{split}/{year}/{piece}",
+                            start,
+                            start + sequence_length
+                        ))
 
     def __len__(self):
-        """Return the number of sequences in the dataset."""
-        return len(self.sequence_indices)
+        return len(self.sequences)
 
     def __getitem__(self, idx):
-        """
-        Get a sequence of CQT and piano roll.
+        group_path, start, end = self.sequences[idx]
 
-        Args:
-            idx (int): Index of the sequence.
+        with h5py.File(self.hdf5_path, 'r') as hdf:
+            group = hdf[group_path]
+            cqt = group['cqt'][start:end]  # (seq_len, 288)
+            pianoroll = group['pianoroll'][start:end]  # (seq_len, 88)
 
-        Returns:
-            tuple: (cqt_sequence, pianoroll_sequence).
-        """
-        group_name, start_idx = self.sequence_indices[idx]
-        file_group = self.split_group[group_name]
+            # Add temporal context to CQT
+            cqt_context = self._add_context(cqt)
+            # Convert to tensors
+            cqt_tensor = torch.from_numpy(
+                cqt_context.copy()).float().unsqueeze(1)  # (seq_len, 1, 288, 5)
+            pianoroll_tensor = torch.from_numpy(pianoroll.copy()).float()
 
-        # Load CQT and piano roll
-        cqt = file_group["cqt"][start_idx:start_idx + self.sequence_length]
-        pianoroll = file_group["pianoroll"][start_idx:start_idx +
-                                            self.sequence_length]
+            return cqt_tensor, pianoroll_tensor
 
-        # Convert to PyTorch tensors
-        cqt_tensor = torch.tensor(cqt, dtype=torch.float32)
-        pianoroll_tensor = torch.tensor(pianoroll, dtype=torch.float32)
+    def _add_context(self, cqt: np.ndarray) -> np.ndarray:
+        """Add temporal context to CQT frames."""
+        # Pad to handle edge frames
+        padded = np.pad(
+            cqt,
+            [(self.context_frames, self.context_frames), (0, 0)],
+            mode='reflect'
+        )
 
-        return cqt_tensor, pianoroll_tensor
+        # Create sliding windows of shape (seq_len, context_frames, freq_bins)
+        windows = np.lib.stride_tricks.sliding_window_view(
+            padded,
+            (2 * self.context_frames + 1, cqt.shape[1])
+        )
+        # Remove singleton dimension and transpose to (seq_len, freq_bins, context)
+        windows = windows.squeeze(axis=1).transpose(0, 2, 1)
 
-    def close(self):
-        """Close the HDF5 file."""
-        self.hdf5_file.close()
+        return windows  # Shape: (seq_len, 288, 5)

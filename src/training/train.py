@@ -27,7 +27,7 @@ def train(cfg: DictConfig):
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False)
 
     # Initialize model, loss, and optimizer
-    model = MultiPitchEstimator(input_bins=train_dataset.freq_bins)
+    model = MultiPitchEstimator()
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss
     optimizer = optim.Adam(
         model.parameters(),
