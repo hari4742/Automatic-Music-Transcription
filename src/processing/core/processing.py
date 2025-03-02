@@ -44,7 +44,7 @@ class AudioProcessor:
         # Convert to dB for better visualization
         cqt_db = librosa.amplitude_to_db(abs(cqt))
 
-        return cqt_db, sr  # (Frequency, Frame), sample rate
+        return cqt_db.T, sr  # (Frame, Freq), sample rate
 
 
 class MIDIProcessor:
@@ -84,4 +84,4 @@ class MIDIProcessor:
         roll = (roll > self.velocity_threshold).astype(
             np.float32)  # Convert to binary (Note ON/OFF)
 
-        return roll  # (Pitch, Time)
+        return roll.T  # (Frame, Freq)

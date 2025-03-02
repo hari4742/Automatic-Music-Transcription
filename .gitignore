@@ -16,7 +16,6 @@ wandb/
 neptune/
 
 # Ignore model weights
-models/
 *.h5
 *.pt
 *.pkl

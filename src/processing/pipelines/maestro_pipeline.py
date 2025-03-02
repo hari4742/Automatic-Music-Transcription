@@ -40,13 +40,13 @@ def process_task(task, config, queue):
             str(midi_path), sample_rate, config.processing.audio.hop_length)
 
         # Trim to shortest dimension to pair the midi and wav
-        min_len = min(cqt.shape[1], pianoroll.shape[1])
+        min_len = min(cqt.shape[0], pianoroll.shape[0])
         queue.put({
             "split": task["split"],
             "year": task["year"],
             "filename": audio_path.stem,
-            "cqt": cqt[:, :min_len],
-            "pianoroll": pianoroll[:, :min_len]
+            "cqt": cqt[:min_len, :],
+            "pianoroll": pianoroll[:min_len, :]
         })
     except Exception as e:
         logger.error(f"Error processing {task['audio_filename']}: {str(e)}")

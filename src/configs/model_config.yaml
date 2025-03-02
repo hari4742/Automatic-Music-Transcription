@@ -1,0 +1,8 @@
+data:
+  hdf5_path: data/processed/maestro.hdf5
+
+training:
+  batch_size: 32
+  epochs: 5
+  lr: 1e-4
+  weight_decay: 1e-5
