@@ -71,6 +71,10 @@ def train(cfg: DictConfig):
         with torch.no_grad():
             for batch in val_loader:
                 cqt, pianoroll = batch
+
+                cqt = cqt.to(device)
+                pianoroll = pianoroll.to(device)
+
                 outputs = model(cqt)
                 loss = criterion(outputs, pianoroll)
                 val_loss += loss.item()
