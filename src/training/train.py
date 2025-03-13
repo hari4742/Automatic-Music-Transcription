@@ -42,6 +42,9 @@ def train(cfg: DictConfig):
     for epoch in range(cfg.training.epochs):
         model.train()
         train_loss = 0.0
+        train_correct = 0
+        train_total = 0
+
         for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.training.epochs}"):
             cqt, pianoroll = batch
 
