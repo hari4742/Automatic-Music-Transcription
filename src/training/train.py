@@ -57,11 +57,18 @@ def train(cfg: DictConfig):
             loss.backward()
             optimizer.step()
 
+            # Compute accuracy
+            # Convert logits to binary predictions
+            preds = torch.sigmoid(outputs) > 0.5
+            train_correct += (preds == pianoroll).sum().item()
+            train_total += pianoroll.numel()
+
             train_loss += loss.item()
 
-        # Log training loss
+        # Log training loss and accuracy
         train_loss /= len(train_loader)
-        wandb.log({"train_loss": train_loss})
+        train_accuracy = train_correct / train_total
+        wandb.log({"train_loss": train_loss, "train_accuracy": train_accuracy})
 
         # Validation
         model.eval()
@@ -79,12 +86,19 @@ def train(cfg: DictConfig):
                 loss = criterion(outputs, pianoroll)
                 val_loss += loss.item()
 
+                # Compute accuracy
+                # Convert logits to binary predictions
+                preds = torch.sigmoid(outputs) > 0.5
+                val_correct += (preds == pianoroll).sum().item()
+                val_total += pianoroll.numel()
+
                 all_outputs.append(outputs)
                 all_targets.append(pianoroll)
 
-        # Log validation loss and metrics
+         # Log validation loss and accuracy
         val_loss /= len(val_loader)
-        wandb.log({"val_loss": val_loss})
+        val_accuracy = val_correct / val_total
+        wandb.log({"val_loss": val_loss, "val_accuracy": val_accuracy})
 
         # Compute metrics (precision, recall, F1)
         outputs = torch.cat(all_outputs)
