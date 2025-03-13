@@ -16,18 +16,21 @@ def train(cfg: DictConfig):
     # Initialize wandb
     wandb.init(project="maestro-multi-pitch-estimation", config=dict(cfg))
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
     # Load datasets
     train_dataset = MaestroDataset(hdf5_path=cfg.data.hdf5_path, split="train")
     val_dataset = MaestroDataset(
         hdf5_path=cfg.data.hdf5_path, split="validation")
 
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True)
+        train_dataset, batch_size=cfg.training.batch_size, shuffle=True, pin_memory=True)
     val_loader = DataLoader(
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False)
 
     # Initialize model, loss, and optimizer
-    model = MultiPitchEstimator()
+    model = MultiPitchEstimator().to(device)
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss
     optimizer = optim.Adam(
         model.parameters(),
@@ -41,6 +44,9 @@ def train(cfg: DictConfig):
         train_loss = 0.0
         for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.training.epochs}"):
             cqt, pianoroll = batch
+
+            cqt = cqt.to(device)
+            pianoroll = pianoroll.to(device)
             optimizer.zero_grad()
 
             # Forward pass
