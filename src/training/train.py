@@ -76,6 +76,8 @@ def train(cfg: DictConfig):
         # Validation
         model.eval()
         val_loss = 0.0
+        val_correct = 0
+        val_total = 0
         all_outputs = []
         all_targets = []
         with torch.no_grad():
