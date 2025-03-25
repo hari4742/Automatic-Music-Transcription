@@ -5,38 +5,33 @@ metric:
   name: val_loss
   goal: minimize
 parameters:
-  training:
-    lr:
-      min: 1e-5
-      max: 1e-3
-      distribution: log_uniform
-    batch_size:
-      values: [32, 64, 128]
-    weight_decay:
-      values: [0.0, 1e-4, 1e-3]
+  lr:
+    min: 1e-5
+    max: 1e-3
+    distribution: log_uniform
+  batch_size:
+    values: [32, 64, 128]
+  weight_decay:
+    values: [0.0, 1e-4, 1e-3]
 
-  model:
-    # CNN Layer 1 parameters
-    kernel1_size_x:
-      values: [5, 10, 15]
-    kernel1_size_y:
-      values: [2, 3]
-    out_channels1:
-      values: [16, 32, 64]
-    max_pool_kernel1_x:
-      values: [2, 4]
+  kernel1_size_x:
+    values: [5, 10, 15]
+  kernel1_size_y:
+    values: [2, 3]
+  out_channels1:
+    values: [16, 32, 64]
+  max_pool_kernel1_x:
+    values: [2, 4]
 
-    # CNN Layer 2 parameters
-    kernel2_size_x:
-      values: [3, 5]
-    out_channels2:
-      values: [32, 64, 128]
+  kernel2_size_x:
+    values: [3, 5]
+  out_channels2:
+    values: [32, 64, 128]
 
-    # LSTM parameters
-    lstm1_hidden_state:
-      values: [256, 500, 1024]
-    dropout_size:
-      min: 0.5
-      max: 0.8
-    lstm2_hidden_state:
-      values: [128, 200, 256]
+  lstm1_hidden_state:
+    values: [256, 500, 1024]
+  dropout_size:
+    min: 0.5
+    max: 0.8
+  lstm2_hidden_state:
+    values: [128, 200, 256]

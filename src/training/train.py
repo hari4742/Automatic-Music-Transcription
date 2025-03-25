@@ -9,6 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 from src.models.multi_pitch_estimator import MultiPitchEstimator
 from src.models.dataset import MaestroDataset
 from src.utils.metrics import compute_metrics
+from src.utils.helper import get_sweep_config
 
 
 @hydra.main(config_path="../configs", config_name="model_config", version_base=None)
@@ -17,7 +18,7 @@ def train(cfg: DictConfig):
     wandb.init(project="maestro-multi-pitch-estimation",
                config=OmegaConf.to_container(cfg, resolve=True))
     # Convert sweep params to OmegaConf
-    sweep_config = OmegaConf.create(wandb.config)
+    sweep_config = get_sweep_config(wandb)
     cfg = OmegaConf.merge(cfg, sweep_config)  # Merge both configs
     print(f"Using config:\n{OmegaConf.to_yaml(cfg)}")
 
