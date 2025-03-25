@@ -18,7 +18,7 @@ def train(cfg: DictConfig):
     wandb.init(project="maestro-multi-pitch-estimation",
                config=OmegaConf.to_container(cfg, resolve=True))
     # Convert sweep params to OmegaConf
-    sweep_config = OmegaConf.create(wandb.config)
+    sweep_config = OmegaConf.create(dict(wandb.config))
     cfg = OmegaConf.merge(cfg, sweep_config)  # Merge both configs
     print(f"Using config:\n{OmegaConf.to_yaml(cfg)}")
 
