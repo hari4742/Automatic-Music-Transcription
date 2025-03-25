@@ -3,7 +3,17 @@ import torch.nn as nn
 
 
 class MultiPitchEstimator(nn.Module):
-    def __init__(self):
+    def __init__(self,
+                 kernel1_size: tuple = (10, 2),
+                 out_channels1: int = 32,
+                 max_pool_kernel1: tuple = (4, 2),
+                 kernel2_size: tuple = (3, 2),
+                 out_channels2: int = 64,
+                 max_pool_kernel2: tuple = (2, 1),
+                 lstm1_hidden_size: int = 500,
+                 dropout_size: int = 0.75,
+                 lstm2_hidden_size: int = 200
+                 ):
         """
         Initialize the multi-pitch estimation model with additional CNN layer.
         """
@@ -11,21 +21,21 @@ class MultiPitchEstimator(nn.Module):
 
         input_shape = (288, 5)
         # Parameters for the first CNN layer
-        kernel_size1 = (10, 2)
-        out_channels1 = 32
-        max_pool_kernel1 = (4, 2)
+        # kernel1_size = (10, 2)
+        # out_channels1 = 32
+        # max_pool_kernel1 = (4, 2)
         # Parameters for the second CNN layer
-        kernel_size2 = (3, 2)
-        out_channels2 = 64
-        max_pool_kernel2 = (2, 1)
+        # kernel2_size = (3, 2)
+        # out_channels2 = 64
+        # max_pool_kernel2 = (2, 1)
 
         # CNN for spectrogram feature extraction
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, out_channels=out_channels1, kernel_size=kernel_size1),
+            nn.Conv2d(1, out_channels=out_channels1, kernel_size=kernel1_size),
             nn.ReLU(),
             nn.MaxPool2d(max_pool_kernel1),
             nn.Conv2d(out_channels1, out_channels=out_channels2,
-                      kernel_size=kernel_size2),
+                      kernel_size=kernel2_size),
             nn.ReLU(),
             nn.MaxPool2d(max_pool_kernel2),
             nn.Flatten(),
@@ -34,29 +44,36 @@ class MultiPitchEstimator(nn.Module):
         # Calculate LSTM input size after two CNN layers
         h, w = input_shape
         # First Conv and Pool
-        h = (h - kernel_size1[0] + 1)  # Conv output height
-        w = (w - kernel_size1[1] + 1)  # Conv output width
+        h = (h - kernel1_size[0] + 1)  # Conv output height
+        w = (w - kernel1_size[1] + 1)  # Conv output width
         h = h // max_pool_kernel1[0]    # MaxPool output height
         w = w // max_pool_kernel1[1]    # MaxPool output width
         # Second Conv and Pool
-        h = (h - kernel_size2[0] + 1)   # Conv output height
-        w = (w - kernel_size2[1] + 1)   # Conv output width
+        h = (h - kernel2_size[0] + 1)   # Conv output height
+        w = (w - kernel2_size[1] + 1)   # Conv output width
         h = h // max_pool_kernel2[0]    # MaxPool output height
         w = w // max_pool_kernel2[1]    # MaxPool output width
-        lstm_input_size = out_channels2 * h * w
+
+        lstm1_input_size = out_channels2 * h * w
+        # lstm1_hidden_size = 500
+        # dropout_size = 0.75
+        lstm2_input_size = lstm1_hidden_size * 2  # hidden size * 2 bidirectional
+        # lstm2_hidden_size = 200
+
+        fc_input_size = lstm2_hidden_size * 2
 
         # Bidirectional LSTMs
-        self.lstm1 = nn.LSTM(input_size=lstm_input_size, hidden_size=500,
+        self.lstm1 = nn.LSTM(input_size=lstm1_input_size, hidden_size=lstm1_hidden_size,
                              bidirectional=True, batch_first=True)
 
-        self.dropout = nn.Dropout(0.75)
+        self.dropout = nn.Dropout(dropout_size)
 
-        self.lstm2 = nn.LSTM(input_size=1000, hidden_size=200,  # 500*2 bidirectional
+        self.lstm2 = nn.LSTM(input_size=lstm2_input_size, hidden_size=lstm2_hidden_size,
                              bidirectional=True, batch_first=True)
 
         # Final output layer
         self.fc = nn.Sequential(
-            nn.Linear(400, 88),  # 200*2 bidirectional
+            nn.Linear(fc_input_size, 88),
             nn.Sigmoid()
         )
 

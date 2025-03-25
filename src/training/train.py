@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from src.models.multi_pitch_estimator import MultiPitchEstimator
 from src.models.dataset import MaestroDataset
 from src.utils.metrics import compute_metrics
@@ -13,8 +13,13 @@ from src.utils.metrics import compute_metrics
 
 @hydra.main(config_path="../configs", config_name="model_config", version_base=None)
 def train(cfg: DictConfig):
-    # Initialize wandb
-    wandb.init(project="maestro-multi-pitch-estimation", config=dict(cfg))
+    # Initialize wandb and merge Hydra config with sweep parameters
+    wandb.init(project="maestro-multi-pitch-estimation",
+               config=OmegaConf.to_container(cfg, resolve=True))
+    # Convert sweep params to OmegaConf
+    sweep_config = OmegaConf.create(wandb.config)
+    cfg = OmegaConf.merge(cfg, sweep_config)  # Merge both configs
+    print(f"Using config:\n{OmegaConf.to_yaml(cfg)}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -30,7 +35,19 @@ def train(cfg: DictConfig):
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False)
 
     # Initialize model, loss, and optimizer
-    model = MultiPitchEstimator().to(device)
+    model = MultiPitchEstimator(
+        kernel1_size=(cfg.model.kernel1_size_x, cfg.model.kernel1_size_y),
+        out_channels1=cfg.model.out_channels1,
+        max_pool_kernel1=(cfg.model.max_pool_kernel1_x,
+                          cfg.model.max_pool_kernel1_y),
+        kernel2_size=(cfg.model.kernel2_size_x, cfg.model.kernel2_size_y),
+        out_channels2=cfg.model.out_channels2,
+        max_pool_kernel2=(cfg.model.max_pool_kernel2_x,
+                          cfg.model.max_pool_kernel2_y),
+        lstm1_hidden_size=cfg.model.lstm1_hidden_state,
+        dropout_size=cfg.model.dropout_size,
+        lstm2_hidden_size=cfg.model.lstm2_hidden_state
+    ).to(device)
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss
     optimizer = optim.Adam(
         model.parameters(),

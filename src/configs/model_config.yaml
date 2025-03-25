@@ -6,3 +6,23 @@ training:
   epochs: 5
   lr: 1e-4
   weight_decay: 1e-5
+
+model:
+  # Fist CNN Layer
+  kernel1_size_x: 10
+  kernel1_size_y: 2
+  out_channels1: 32
+  max_pool_kernel1_x: 4
+  max_pool_kernel1_y: 2
+
+  # Second CNN Layer
+  kernel2_size_x: 3
+  kernel2_size_y: 2
+  out_channels2: 64
+  max_pool_kernel2_x: 2
+  max_pool_kernel2_y: 1
+
+  # LSTM Layer
+  lstm1_hidden_state: 500
+  dropout_size: 0.75
+  lstm2_hidden_state: 200
