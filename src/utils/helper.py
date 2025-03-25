@@ -23,3 +23,14 @@ def get_sweep_config(wandb):
     })
 
     return sweep_config
+
+
+def convert_args_to_overrides(args):
+    overrides = []
+    for arg in args:
+        if arg.startswith('--'):
+            # Remove -- and split on =
+            key_value = arg[2:].split('=', 1)
+            if len(key_value) == 2:
+                overrides.append(f"{key_value[0]}={key_value[1]}")
+    return overrides

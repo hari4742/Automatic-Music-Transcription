@@ -9,7 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 from src.models.multi_pitch_estimator import MultiPitchEstimator
 from src.models.dataset import MaestroDataset
 from src.utils.metrics import compute_metrics
-from src.utils.helper import get_sweep_config
+from src.utils.helper import convert_args_to_overrides
 
 
 @hydra.main(config_path="../configs", config_name="model_config", version_base=None)
@@ -140,4 +140,8 @@ def train(cfg: DictConfig):
 
 
 if __name__ == "__main__":
+    import sys
+    # Convert --arg=value to arg=value format for Hydra
+    overrides = convert_args_to_overrides(sys.argv[1:])
+    sys.argv = [sys.argv[0]] + overrides
     train()
