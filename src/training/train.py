@@ -18,7 +18,7 @@ def train(cfg: DictConfig):
     wandb.init(project="maestro-multi-pitch-estimation",
                config=OmegaConf.to_container(cfg, resolve=True))
     # Convert sweep params to OmegaConf
-    sweep_config = get_sweep_config(wandb)
+    sweep_config = OmegaConf.create(wandb.config)
     cfg = OmegaConf.merge(cfg, sweep_config)  # Merge both configs
     print(f"Using config:\n{OmegaConf.to_yaml(cfg)}")
 
@@ -31,39 +31,39 @@ def train(cfg: DictConfig):
         hdf5_path=cfg.data.hdf5_path, split="validation")
 
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True, pin_memory=True)
+        train_dataset, batch_size=cfg.batch_size, shuffle=True, pin_memory=True)
     val_loader = DataLoader(
-        val_dataset, batch_size=cfg.training.batch_size, shuffle=False)
+        val_dataset, batch_size=cfg.batch_size, shuffle=False)
 
     # Initialize model, loss, and optimizer
     model = MultiPitchEstimator(
-        kernel1_size=(cfg.model.kernel1_size_x, cfg.model.kernel1_size_y),
-        out_channels1=cfg.model.out_channels1,
-        max_pool_kernel1=(cfg.model.max_pool_kernel1_x,
-                          cfg.model.max_pool_kernel1_y),
-        kernel2_size=(cfg.model.kernel2_size_x, cfg.model.kernel2_size_y),
-        out_channels2=cfg.model.out_channels2,
-        max_pool_kernel2=(cfg.model.max_pool_kernel2_x,
-                          cfg.model.max_pool_kernel2_y),
-        lstm1_hidden_size=cfg.model.lstm1_hidden_state,
-        dropout_size=cfg.model.dropout_size,
-        lstm2_hidden_size=cfg.model.lstm2_hidden_state
+        kernel1_size=(cfg.kernel1_size_x, cfg.kernel1_size_y),
+        out_channels1=cfg.out_channels1,
+        max_pool_kernel1=(cfg.max_pool_kernel1_x,
+                          cfg.max_pool_kernel1_y),
+        kernel2_size=(cfg.kernel2_size_x, cfg.kernel2_size_y),
+        out_channels2=cfg.out_channels2,
+        max_pool_kernel2=(cfg.max_pool_kernel2_x,
+                          cfg.max_pool_kernel2_y),
+        lstm1_hidden_size=cfg.lstm1_hidden_state,
+        dropout_size=cfg.dropout_size,
+        lstm2_hidden_size=cfg.lstm2_hidden_state
     ).to(device)
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss
     optimizer = optim.Adam(
         model.parameters(),
-        lr=cfg.training.lr,
-        weight_decay=cfg.training.weight_decay
+        lr=cfg.lr,
+        weight_decay=cfg.weight_decay
     )
 
     # Training loop
-    for epoch in range(cfg.training.epochs):
+    for epoch in range(cfg.epochs):
         model.train()
         train_loss = 0.0
         train_correct = 0
         train_total = 0
 
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.training.epochs}"):
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.epochs}"):
             cqt, pianoroll = batch
 
             cqt = cqt.to(device)
