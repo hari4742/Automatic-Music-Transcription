@@ -3,7 +3,7 @@ data:
 
 # training:
 batch_size: 32
-epochs: 5
+epochs: 50
 lr: 1e-4
 weight_decay: 1e-5
 
