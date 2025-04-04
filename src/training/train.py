@@ -1,5 +1,6 @@
 import hydra
 import wandb
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,11 +13,21 @@ from src.utils.metrics import compute_metrics
 from src.utils.helper import convert_args_to_overrides
 
 
+def save_model(model, run_name: str, run_id: str, file_name: str):
+    output_dir = "checkpoints"
+    os.makedirs(output_dir, exist_ok=True)
+    model_path = os.path.join(
+        output_dir, f"{file_name}_{run_name}_{run_id}.pth")
+    torch.save(model.state_dict(), model_path)
+
+
 @hydra.main(config_path="../configs", config_name="model_config", version_base=None)
 def train(cfg: DictConfig):
     # Initialize wandb and merge Hydra config with sweep parameters
     wandb.init(project="maestro-multi-pitch-estimation",
                config=OmegaConf.to_container(cfg, resolve=True))
+    run_name = wandb.run.name
+    run_id = wandb.run.id
     # Convert sweep params to OmegaConf
     sweep_config = OmegaConf.create(dict(wandb.config))
     cfg = OmegaConf.merge(cfg, sweep_config)  # Merge both configs
@@ -134,10 +145,12 @@ def train(cfg: DictConfig):
             wandb.run.summary, "best_val_loss", float("inf"))
         if val_loss < best_val_loss:
             wandb.run.summary["best_val_loss"] = val_loss
-            torch.save(model.state_dict(), f"best_model_{wandb.run.id}.pth")
+            file_name = "best_model"
+
+            save_model(model, run_name, run_id, file_name)
 
     # Save the final model
-    torch.save(model.state_dict(), "final_model.pth")
+    save_model(model, run_name, run_id, "final_model")
     wandb.finish()
 
 
