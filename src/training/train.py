@@ -130,9 +130,11 @@ def train(cfg: DictConfig):
         wandb.log(metrics)
 
         # Save the best model
-        if val_loss < wandb.run.summary.get("best_val_loss", float("inf")):
+        best_val_loss = getattr(
+            wandb.run.summary, "best_val_loss", float("inf"))
+        if val_loss < best_val_loss:
             wandb.run.summary["best_val_loss"] = val_loss
-            torch.save(model.state_dict(), "best_model.pth")
+            torch.save(model.state_dict(), f"best_model_{wandb.run.id}.pth")
 
     # Save the final model
     torch.save(model.state_dict(), "final_model.pth")
